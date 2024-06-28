@@ -11,7 +11,7 @@ LAUNCH_VATSYS = True
 
 
 import os, subprocess, sys
-from datetime import datetime
+from datetime import datetime, timezone
 
 import importlib.util as il
 if None in [il.find_spec('requests')]:
@@ -55,11 +55,12 @@ def fetch_nats():
         if 'INCLUSIVE' in line:
             d1, h1 = line_[1].split('/')
             h1, m1 = h1[0:2], h1[2:4]
-            d0, h0, m0 = datetime.utcnow().day, datetime.utcnow().hour, datetime.utcnow().minute
+            utc = datetime.now(timezone.utc)
+            d0, h0, m0 = utc.day, utc.hour, utc.minute
     
             if int(d1) != int(d0):
                 h1 = int(h1) + 24
-            dt = (h1 - h0) + (int(m1) - m0) / 60
+            dt = (int(h1) - h0) + (int(m1) - m0) / 60
     
         if len(line[0]) == 1 and (line_[0] == 'EAST' or line_[0] == 'WEST'):
             for j in range(len(line)):
@@ -165,9 +166,6 @@ def inject_awys(nats, ints, file):
 
 
 navdata_dir = os.path.expanduser('~') + R'\Documents\vatSys Files\NavData'
-if not os.path.exists(navdata_dir):
-    navdata_dir = os.path.expanduser('~') + R'\OneDrive\Documents\vatSys Files\NavData'
-
 ints_file = os.path.join(navdata_dir, 'ints.txt')
 awys_file = os.path.join(navdata_dir, 'awys.txt')
 
@@ -175,6 +173,7 @@ if not 'vatSys.exe' in str(subprocess.check_output('tasklist')):
     nats, all_ints = fetch_nats()
     ints = find_ints(all_ints, ints_file)
     inject_awys(nats, ints, awys_file)
+    inject_awys(nats, ints, awys_file.replace('Documents', R'OneDrive\Documents'))
     
     if LAUNCH_VATSYS:
         vatsys_dir = os.environ['ProgramFiles(x86)'] + R'\vatSys'
